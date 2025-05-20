@@ -211,38 +211,40 @@ picture_options = {
 }
 
 
+
 st.title("🎨 Teacher Attendance Dashboard")
 
 email = st.text_input("Enter your registered teacher email:")
 
 if email:
-    st.info("Fetching your pending attendance records...")
-
     try:
+        st.info("Fetching pending records...")
+
+        # Fetch pending data from Apps Script
         response = requests.get(APPSCRIPT_URL)
         response.raise_for_status()
-        data = response.json()
+        all_data = response.json()
 
-        # Filter only rows assigned to this teacher
-        teacher_rows = [row for row in data if row["CI"].strip().lower() == email.strip().lower()]
+        # Filter for logged-in teacher
+        filtered = [row for row in all_data if row["CI"].strip().lower() == email.strip().lower()]
 
-        if not teacher_rows:
-            st.success("✅ No pending entries found.")
+        if not filtered:
+            st.success("✅ No pending attendance entries found.")
         else:
-            # 🧾 Use a form to update multiple entries at once
-            with st.form("attendance_form"):
+            with st.form("update_attendance_form"):
+                st.subheader("Update Entries")
                 updates = []
 
-                for row in teacher_rows:
+                for row in filtered:
                     st.markdown("---")
-                    st.markdown(f"**Student:** {row['STUDENT NAME']} | **Date:** {row['DATE']} | **Slot:** {row['SLOT']}")
-                    st.text(f"Student ID: {row['STUDENT ID']}")
+                    st.markdown(f"**{row.get('STUDENT NAME')}** | **{row.get('DATE')}** | **{row.get('SLOT')}**")
+                    st.text(f"RowKey: {row.get('RowKey')}")
 
-                    selected_picture = st.selectbox(
+                    selected_pic = st.selectbox(
                         "Work Done in Class",
                         options=list(picture_options.keys()),
                         format_func=lambda x: picture_options[x],
-                        key=f"pic_{row['RowKey']}"
+                        key=f"work_{row['RowKey']}"
                     )
 
                     remarks = st.text_area(
@@ -252,22 +254,26 @@ if email:
 
                     updates.append({
                         "RowKey": row["RowKey"],
-                        "workDone": selected_picture,
+                        "workDone": selected_pic,
                         "remarks": remarks
                     })
 
-                # ✅ Submit button must be inside the form
                 submitted = st.form_submit_button("Submit All Updates")
 
             if submitted:
                 success_count = 0
-                for item in updates:
-                    res = requests.post(APPSCRIPT_URL, json=item)
-                    if res.status_code == 200 and res.json().get("status") == "success":
+                for update in updates:
+                    r = requests.post(APPSCRIPT_URL, json=update)
+                    if r.status_code == 200 and r.json().get("status") == "success":
                         success_count += 1
-                st.success(f"✅ Successfully submitted {success_count} updates!")
+
+                st.success(f"✅ Successfully updated {success_count} entries!")
 
     except Exception as e:
+        st.error(f"Error: {e}")
+else:
+    st.info("Please enter your teacher email to proceed.")
+
         st.error(f"Error fetching data: {e}")
 else:
     st.info("Please enter your teacher email to view pending records.")

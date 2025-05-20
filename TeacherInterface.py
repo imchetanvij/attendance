@@ -273,7 +273,6 @@ if email:
         st.error(f"Error: {e}")
 else:
     st.info("Please enter your teacher email to proceed.")
-
-        st.error(f"Error fetching data: {e}")
+    st.error(f"Error fetching data: {e}")
 else:
     st.info("Please enter your teacher email to view pending records.")

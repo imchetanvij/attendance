@@ -223,7 +223,7 @@ if email:
         response.raise_for_status()
         all_data = response.json()
         st.subheader("Raw Data Fetched:")
-        st.json(data)
+        st.json(all_data)
 
 
         # Filter for logged-in teacher

@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-WEB_APP_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL"  # replace with your deployed URL
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgx96l-aK3d55jnVLxaFTwp8wTObnwQxg27M9cg_jVTbT0CSaeeq65NBN_0rB50dsD/exec"  # replace with your deployed URL
 
 st.title("Teacher Attendance Dashboard")
 

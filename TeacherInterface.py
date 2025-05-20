@@ -1,4 +1,3 @@
-WEB_APP_URL = 
 
 import streamlit as st
 import requests

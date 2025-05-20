@@ -4,7 +4,7 @@ import requests
 import pandas as pd
 
 # 🔧 Replace this with your actual Web App URL
-APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgx96l-aK3d55jnVLxaFTwp8wTObnwQxg27M9cg_jVTbT0CSaeeq65NBN_0rB50dsD/exec"  # replace with your deployed URL
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgx96l-aK3d55jnVLxaFTwp8wTObnwQxg27M9cg_jVTbT0CSaeeq65NBN_0rB50dsD/exec"  # replace with your deployed URL
 
 # Load picture descriptions (can come from a Google Sheet or local dict)
 picture_options = {

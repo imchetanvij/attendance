@@ -209,73 +209,76 @@ picture_options = {
 "PREINTERMEDIATEQuarterlyCraft":"PREINTERMEDIATE Quarterly Craft"
 }
 
-st.title("🧑‍🏫 Teacher Attendance Dashboard")
+st.title("🎨 Update Student Work")
 
-st.write("This dashboard shows all students with pending remarks.")
+# Fetch data from Google Apps Script
+@st.cache_data(show_spinner=False)
+def fetch_data():
+    try:
+        response = requests.get(WEB_APP_URL)
+        response.raise_for_status()
+        data = response.json()
 
-# Step 1: Fetch Data from Apps Script
-try:
-    res = requests.get(WEB_APP_URL)
-    res.raise_for_status()
-    data = res.json()
-except Exception as e:
-    st.error(f"❌ Error fetching data: {e}")
-    st.stop()
+        # If response is a list, convert to DataFrame
+        if isinstance(data, list):
+            df = pd.DataFrame(data)
+        elif isinstance(data, dict) and "data" in data:
+            df = pd.DataFrame(data["data"])
+        else:
+            raise ValueError("Unexpected response format")
 
-# Step 2: Flatten the response
-column_names = [
-    "RowKey", "DATE", "SLOT", "CI",
-    "STUDENT ID", "STUDENT NAME", "WORK DONE IN THE CLASS",
-    "REMARKS", "MMYY", "Duplicate"
-]
+        return df
+    except Exception as e:
+        st.error(f"Failed to fetch data: {e}")
+        return pd.DataFrame()
 
-flattened = []
-for row in data:
-    if "data" in row:
-        mapped = dict(zip(column_names, row["data"]))
-        mapped["RowKey"] = row["RowKey"]
-        mapped["CI"] = row["CI"]
-        flattened.append(mapped)
+# Load the data
+df = fetch_data()
 
-df = pd.DataFrame(flattened)
+# Display only if data is available
+if not df.empty:
+    # Filter options
+    teacher_email = st.text_input("Enter your email to filter your entries:")
+    pending_only = st.checkbox("Show only 'Pending' remarks", value=True)
 
-if df.empty:
-    st.info("🎉 No pending attendance updates.")
-    st.stop()
+    filtered_df = df.copy()
+    if teacher_email:
+        filtered_df = filtered_df[filtered_df["CI"].str.lower() == teacher_email.lower()]
+    if pending_only:
+        filtered_df = filtered_df[filtered_df["REMARKS"].str.lower() == "pending"]
 
-# Step 3: Show form
-updates = []
-with st.form("attendance_form"):
-    for idx, row in df.iterrows():
-        st.markdown(f"---\n### 👧 {row['STUDENT NAME']} | 📅 {row['DATE']} | 🕒 {row['SLOT']}")
+    st.subheader("📋 Editable Entries")
+    selected_row = st.selectbox("Select a row to update:", filtered_df["STUDENT NAME"] + " - " + filtered_df["DATE"])
 
-        work_done = st.text_input(
-            f"Work Done in Class for {row['STUDENT NAME']}", key=f"work_{idx}", value=row["WORK DONE IN THE CLASS"]
-        )
+    if selected_row:
+        # Get the row details
+        row_data = filtered_df[filtered_df["STUDENT NAME"] + " - " + filtered_df["DATE"] == selected_row].iloc[0]
 
-        remark = st.text_area(
-            f"Remarks for {row['STUDENT NAME']}", key=f"remark_{idx}", value=row["REMARKS"]
-        )
+        st.write("**Student Name:**", row_data["STUDENT NAME"])
+        st.write("**Date:**", row_data["DATE"])
+        st.write("**Slot:**", row_data["SLOT"])
 
-        updates.append((row["RowKey"], work_done, remark))
+        # Dropdown for "WORK DONE IN THE CLASS"
+        selected_work = st.selectbox("Select picture:", options=list(picture_options.keys()), format_func=lambda x: picture_options[x])
 
-    submitted = st.form_submit_button("✅ Submit All")
+        # Remarks
+        updated_remarks = st.text_area("Remarks", value=row_data["REMARKS"])
 
-# Step 4: POST updates back
-if submitted:
-    success_count = 0
-    for RowKey, workDone, remarks in updates:
-        payload = {
-            "RowKey": RowKey,
-            "workDone": workDone,
-            "remarks": remarks
-        }
-        try:
-            r = requests.post(WEB_APP_URL, json=payload)
-            response = r.json()
-            if response.get("status") == "success":
-                success_count += 1
-        except Exception as e:
-            st.error(f"Failed to update RowKey {RowKey}: {e}")
-
-    st.success(f"✅ {success_count} rows updated successfully!")
+        # Submit Button
+        if st.button("Submit Update"):
+            try:
+                payload = {
+                    "rowkey": row_data["RowKey"],
+                    "work_done": selected_work,
+                    "remarks": updated_remarks
+                }
+                response = requests.post(WEB_APP_URL, json=payload)
+                if response.status_code == 200:
+                    st.success("✅ Updated successfully!")
+                    st.experimental_rerun()
+                else:
+                    st.error("❌ Failed to update the record.")
+            except Exception as e:
+                st.error(f"Error while updating: {e}")
+else:
+    st.warning("No data available to display.")

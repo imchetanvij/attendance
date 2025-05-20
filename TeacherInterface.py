@@ -210,68 +210,73 @@ picture_options = {
 "PREINTERMEDIATEQuarterlyCraft":"PREINTERMEDIATE Quarterly Craft"
 }
 
-st.title("🎨 Teacher Attendance Dashboard")
+st.title("🧑‍🏫 Teacher Attendance Dashboard")
 
-email = st.text_input("Enter your registered teacher email:")
+st.write("This dashboard shows all students with pending remarks.")
 
-if email:
-    try:
-        st.info("Fetching pending records...")
+# Step 1: Fetch Data from Apps Script
+try:
+    res = requests.get(WEB_APP_URL)
+    res.raise_for_status()
+    data = res.json()
+except Exception as e:
+    st.error(f"❌ Error fetching data: {e}")
+    st.stop()
 
-        # Fetch pending data from Apps Script
-        response = requests.get(APPSCRIPT_URL)
-        response.raise_for_status()
-        all_data = response.json()
-        st.subheader("Raw Data Fetched:")
-        st.json(all_data)
+# Step 2: Flatten the response
+column_names = [
+    "RowKey", "DATE", "SLOT", "CI",
+    "STUDENT ID", "STUDENT NAME", "WORK DONE IN THE CLASS",
+    "REMARKS", "MMYY", "Duplicate"
+]
 
+flattened = []
+for row in data:
+    if "data" in row:
+        mapped = dict(zip(column_names, row["data"]))
+        mapped["RowKey"] = row["RowKey"]
+        mapped["CI"] = row["CI"]
+        flattened.append(mapped)
 
-        # Filter for logged-in teacher
-        filtered = [row for row in all_data if row["CI"].strip().lower() == email.strip().lower()]
+df = pd.DataFrame(flattened)
 
-        if not filtered:
-            st.success("✅ No pending attendance entries found.")
-        else:
-            with st.form("update_attendance_form"):
-                st.subheader("Update Entries")
-                updates = []
+if df.empty:
+    st.info("🎉 No pending attendance updates.")
+    st.stop()
 
-                for row in filtered:
-                    st.markdown("---")
-                    st.markdown(f"**{row.get('STUDENT NAME')}** | **{row.get('DATE')}** | **{row.get('SLOT')}**")
-                    st.text(f"RowKey: {row.get('RowKey')}")
+# Step 3: Show form
+updates = []
+with st.form("attendance_form"):
+    for idx, row in df.iterrows():
+        st.markdown(f"---\n### 👧 {row['STUDENT NAME']} | 📅 {row['DATE']} | 🕒 {row['SLOT']}")
 
-                    selected_pic = st.selectbox(
-                        "Work Done in Class",
-                        options=list(picture_options.keys()),
-                        format_func=lambda x: picture_options[x],
-                        key=f"work_{row['RowKey']}"
-                    )
+        work_done = st.text_input(
+            f"Work Done in Class for {row['STUDENT NAME']}", key=f"work_{idx}", value=row["WORK DONE IN THE CLASS"]
+        )
 
-                    remarks = st.text_area(
-                        "Remarks",
-                        key=f"remarks_{row['RowKey']}"
-                    )
+        remark = st.text_area(
+            f"Remarks for {row['STUDENT NAME']}", key=f"remark_{idx}", value=row["REMARKS"]
+        )
 
-                    updates.append({
-                        "RowKey": row["RowKey"],
-                        "workDone": selected_pic,
-                        "remarks": remarks
-                    })
+        updates.append((row["RowKey"], work_done, remark))
 
-                submitted = st.form_submit_button("Submit All Updates")
+    submitted = st.form_submit_button("✅ Submit All")
 
-            if submitted:
-                success_count = 0
-                for update in updates:
-                    r = requests.post(APPSCRIPT_URL, json=update)
-                    if r.status_code == 200 and r.json().get("status") == "success":
-                        success_count += 1
+# Step 4: POST updates back
+if submitted:
+    success_count = 0
+    for RowKey, workDone, remarks in updates:
+        payload = {
+            "RowKey": RowKey,
+            "workDone": workDone,
+            "remarks": remarks
+        }
+        try:
+            r = requests.post(WEB_APP_URL, json=payload)
+            response = r.json()
+            if response.get("status") == "success":
+                success_count += 1
+        except Exception as e:
+            st.error(f"Failed to update RowKey {RowKey}: {e}")
 
-                st.success(f"✅ Successfully updated {success_count} entries!")
-
-    except Exception as e:
-        st.error(f"Error: {e}")
-else:
-    st.info("Please enter your teacher email to proceed.")
-
+    st.success(f"✅ {success_count} rows updated successfully!")

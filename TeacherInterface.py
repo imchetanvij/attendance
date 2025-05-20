@@ -210,6 +210,7 @@ picture_options = {
 "PREINTERMEDIATEQuarterlyCraft":"PREINTERMEDIATE Quarterly Craft"
 }
 
+
 st.title("🎨 Teacher Attendance Dashboard")
 
 email = st.text_input("Enter your registered teacher email:")
@@ -222,29 +223,31 @@ if email:
         response.raise_for_status()
         data = response.json()
 
-        # Filter only this teacher's entries
+        # Filter only rows assigned to this teacher
         teacher_rows = [row for row in data if row["CI"].strip().lower() == email.strip().lower()]
 
         if not teacher_rows:
             st.success("✅ No pending entries found.")
         else:
-            updates = []
-
+            # 🧾 Use a form to update multiple entries at once
             with st.form("attendance_form"):
+                updates = []
+
                 for row in teacher_rows:
                     st.markdown("---")
-                    st.subheader(f"{row['STUDENT NAME']} | {row['DATE']} ({row['SLOT']})")
+                    st.markdown(f"**Student:** {row['STUDENT NAME']} | **Date:** {row['DATE']} | **Slot:** {row['SLOT']}")
                     st.text(f"Student ID: {row['STUDENT ID']}")
-                    
+
                     selected_picture = st.selectbox(
-                        "Select 'Work Done in Class'",
+                        "Work Done in Class",
                         options=list(picture_options.keys()),
                         format_func=lambda x: picture_options[x],
                         key=f"pic_{row['RowKey']}"
                     )
 
                     remarks = st.text_area(
-                        "Remarks", key=f"remarks_{row['RowKey']}"
+                        "Remarks",
+                        key=f"remarks_{row['RowKey']}"
                     )
 
                     updates.append({
@@ -253,6 +256,7 @@ if email:
                         "remarks": remarks
                     })
 
+                # ✅ Submit button must be inside the form
                 submitted = st.form_submit_button("Submit All Updates")
 
             if submitted:
@@ -266,4 +270,4 @@ if email:
     except Exception as e:
         st.error(f"Error fetching data: {e}")
 else:
-    st.info("Please enter your teacher email to continue.")
+    st.info("Please enter your teacher email to view pending records.")

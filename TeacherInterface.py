@@ -222,6 +222,9 @@ if email:
         response = requests.get(APPSCRIPT_URL)
         response.raise_for_status()
         all_data = response.json()
+        st.subheader("Raw Data Fetched:")
+st.json(data)
+
 
         # Filter for logged-in teacher
         filtered = [row for row in all_data if row["CI"].strip().lower() == email.strip().lower()]

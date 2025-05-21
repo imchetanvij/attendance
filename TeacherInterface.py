@@ -245,6 +245,9 @@ def main():
 
     # Fetch data
     df_raw = fetch_data()
+    df_raw = fetch_data()
+    st.write("Raw fetched data:", df_raw)
+
 
     # Expand nested data
     df = expand_data_column(df_raw)

@@ -242,6 +242,9 @@ def main():
         return
 
     df = pd.DataFrame(data)
+    st.write("Columns in data:", df.columns.tolist())
+st.write(df.head())
+
     filtered = df[df['CI'] == teacher_ci]
 
     if filtered.empty:

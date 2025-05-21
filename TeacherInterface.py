@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 
+
 # 🔧 Replace this with your actual Web App URL
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgx96l-aK3d55jnVLxaFTwp8wTObnwQxg27M9cg_jVTbT0CSaeeq65NBN_0rB50dsD/exec"  # replace with your deployed URL
 
@@ -209,73 +210,53 @@ picture_options = {
 "PREINTERMEDIATEQuarterlyCraft":"PREINTERMEDIATE Quarterly Craft"
 }
 
-st.title("🧑‍🏫 Teacher Attendance Dashboard")
+# ------------------ Add CI Filter Input (New Feature) ------------------
+ci_filter = st.text_input("Enter your CI name to filter rows:", "")
 
-st.write("This dashboard shows all students with pending remarks.")
+if ci_filter:
+    # ------------------ Modify your GET request to use CI ------------------
+    response = requests.get(
+        WEB_APP_URL,
+        params={"ci": ci_filter}
+    )
+    
+    if response.status_code == 200:
+        data = response.json()
 
-# Step 1: Fetch Data from Apps Script
-try:
-    res = requests.get(WEB_APP_URL)
-    res.raise_for_status()
-    data = res.json()
-except Exception as e:
-    st.error(f"❌ Error fetching data: {e}")
-    st.stop()
+        if len(data) == 0:
+            st.info("No pending entries found for this CI.")
+        else:
+            for entry in data:
+                with st.form(key=entry["RowKey"]):
+                    st.write(f"### {entry['STUDENT NAME']} - {entry['DATE']} - {entry['SLOT']}")
+                    
+                    # ------------------ Add Dropdown for picture options ------------------
+                    work_done = st.selectbox(
+                        "WORK DONE IN THE CLASS",
+                        picture_options,
+                        key="work_" + entry["RowKey"]
+                    )
 
-# Step 2: Flatten the response
-column_names = [
-    "RowKey", "DATE", "SLOT", "CI",
-    "STUDENT ID", "STUDENT NAME", "WORK DONE IN THE CLASS",
-    "REMARKS", "MMYY", "Duplicate"
-]
+                    remarks = st.text_area(
+                        "REMARKS",
+                        key="remarks_" + entry["RowKey"]
+                    )
 
-flattened = []
-for row in data:
-    if "data" in row:
-        mapped = dict(zip(column_names, row["data"]))
-        mapped["RowKey"] = row["RowKey"]
-        mapped["CI"] = row["CI"]
-        flattened.append(mapped)
-
-df = pd.DataFrame(flattened)
-
-if df.empty:
-    st.info("🎉 No pending attendance updates.")
-    st.stop()
-
-# Step 3: Show form
-updates = []
-with st.form("attendance_form"):
-    for idx, row in df.iterrows():
-        st.markdown(f"---\n### 👧 {row['STUDENT NAME']} | 📅 {row['DATE']} | 🕒 {row['SLOT']}")
-
-        work_done = st.text_input(
-            f"Work Done in Class for {row['STUDENT NAME']}", key=f"work_{idx}", value=row["WORK DONE IN THE CLASS"]
-        )
-
-        remark = st.text_area(
-            f"Remarks for {row['STUDENT NAME']}", key=f"remark_{idx}", value=row["REMARKS"]
-        )
-
-        updates.append((row["RowKey"], work_done, remark))
-
-    submitted = st.form_submit_button("✅ Submit All")
-
-# Step 4: POST updates back
-if submitted:
-    success_count = 0
-    for RowKey, workDone, remarks in updates:
-        payload = {
-            "RowKey": RowKey,
-            "workDone": workDone,
-            "remarks": remarks
-        }
-        try:
-            r = requests.post(WEB_APP_URL, json=payload)
-            response = r.json()
-            if response.get("status") == "success":
-                success_count += 1
-        except Exception as e:
-            st.error(f"Failed to update RowKey {RowKey}: {e}")
-
-    st.success(f"✅ {success_count} rows updated successfully!")
+                    submitted = st.form_submit_button("Submit")
+                    if submitted:
+                        payload = {
+                            "RowKey": entry["RowKey"],
+                            "workDone": work_done,
+                            "remarks": remarks
+                        }
+                        post_res = requests.post(
+                            WEB_APP_URL,
+                            json=payload
+                        )
+                        result = post_res.json()
+                        if result["status"] == "success":
+                            st.success("Updated successfully!")
+                        else:
+                            st.error("Failed to update: " + result["message"])
+    else:
+        st.error("Could not fetch data from server.")

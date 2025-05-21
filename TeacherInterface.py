@@ -263,13 +263,24 @@ def main():
         except ValueError:
             index = 0  # default if current value not in options
 
-        work_done = st.selectbox(
-            "WORK DONE IN THE CLASS",
-            options=options,
-            index=index,
-            format_func=lambda x: picture_options.get(x, x),
-            key=f"workdone_{idx}"
-        )
+        # Handle default if current_work_done is not in options
+work_done_default = current_work_done if current_work_done in options else options[0]
+
+work_done = st.selectbox(
+    "WORK DONE IN THE CLASS",
+    options=options,
+    index=options.index(work_done_default),  # optional, but faster for UI rendering
+    format_func=lambda x: picture_options.get(x, x),
+    key=f"workdone_{idx}"
+)
+
+#        work_done = st.selectbox(
+#            "WORK DONE IN THE CLASS",
+#            options=options,
+#            index=index,
+#            format_func=lambda x: picture_options.get(x, x),
+#            key=f"workdone_{idx}"
+#        )
 
         remarks = st.text_area(
             "REMARKS",

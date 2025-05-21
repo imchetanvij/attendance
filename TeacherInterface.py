@@ -234,6 +234,15 @@ def fetch_data():
 #        df = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
 #    return df
 
+def post_update(row):
+    payload = {
+        "RowKey": row["RowKey"],
+        "workDone": row["WORK DONE IN THE CLASS"],
+        "remarks": row["REMARKS"]
+    }
+    response = requests.post(WEB_APP_URL, json=payload)
+    response.raise_for_status()
+    return response.json()
 
 def post_updates(updated_rows):
     # Send updated rows back to the App Script POST endpoint
@@ -311,11 +320,19 @@ def main():
         updated_rows.append(updated_row)
 
     # Submit button
-    if st.button("Submit Updates"):
+#    if st.button("Submit Updates"):
         # Prepare payload for only updated rows with full original row keys
-        response = post_updates(updated_rows)
-        st.success("Updates sent successfully!")
-        st.json(response)
+#        response = post_updates(updated_rows)
+#        st.success("Updates sent successfully!")
+#        st.json(response)
+if st.button("Submit Updates"):
+    responses = []
+    for row in updated_rows:
+        resp = post_update(row)
+        responses.append(resp)
+    st.success("Updates sent successfully!")
+    st.json(responses)
+
 
 if __name__ == "__main__":
     main()

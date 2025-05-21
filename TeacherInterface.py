@@ -230,7 +230,6 @@ def main():
 
     logged_in_ci = st.text_input("Enter your CI (teacher ID) for testing:")
 
-
     if not logged_in_ci:
         st.info("Please enter your CI to see your data.")
         return
@@ -294,7 +293,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-
-if __name__ == "__main__":
-    main()

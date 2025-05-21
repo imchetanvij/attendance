@@ -210,53 +210,47 @@ picture_options = {
 "PREINTERMEDIATEQuarterlyCraft":"PREINTERMEDIATE Quarterly Craft"
 }
 
-# ------------------ Add CI Filter Input (New Feature) ------------------
-ci_filter = st.text_input("Enter your CI name to filter rows:", "")
 
-if ci_filter:
-    # ------------------ Modify your GET request to use CI ------------------
-    response = requests.get(
-        WEB_APP_URL,
-        params={"ci": ci_filter}
+
+# Assume entries is your JSON list fetched from doGet()
+
+for entry in entries:
+    student_name = entry.get("STUDENT NAME", "Unknown Student")
+    date = entry.get("DATE", "")
+    slot = entry.get("SLOT", "")
+    row_key = entry.get("RowKey")
+
+    st.write(f"### {student_name} - {date} - {slot}")
+
+    # Dropdown for "WORK DONE IN THE CLASS"
+    picture_options = ["Option1", "Option2", "Option3"]  # Replace with your real options
+    selected_work_done = st.selectbox(
+        f"Work Done for {student_name}",
+        picture_options,
+        index=picture_options.index(entry.get("WORK DONE IN THE CLASS", picture_options[0])),
+        key=f"workdone_{row_key}"
     )
-    
-    if response.status_code == 200:
-        data = response.json()
 
-        if len(data) == 0:
-            st.info("No pending entries found for this CI.")
+    # Text area for remarks
+    remarks = st.text_area(
+        "Remarks",
+        value=entry.get("REMARKS", ""),
+        key=f"remarks_{row_key}"
+    )
+
+    if st.button(f"Update {student_name}", key=f"update_{row_key}"):
+        # POST update using rowKey
+        post_data = {
+            "RowKey": row_key,
+            "workDone": selected_work_done,
+            "remarks": remarks,
+        }
+        response = requests.post(WEB_APP_URL, json=post_data)
+        if response.status_code == 200:
+            res_json = response.json()
+            if res_json.get("status") == "success":
+                st.success(f"Updated successfully for {student_name}")
+            else:
+                st.error(f"Error: {res_json.get('message')}")
         else:
-            for entry in data:
-                with st.form(key=entry["RowKey"]):
-                    st.write(f"### {entry['STUDENT NAME']} - {entry['DATE']} - {entry['SLOT']}")
-                    
-                    # ------------------ Add Dropdown for picture options ------------------
-                    work_done = st.selectbox(
-                        "WORK DONE IN THE CLASS",
-                        picture_options,
-                        key="work_" + entry["RowKey"]
-                    )
-
-                    remarks = st.text_area(
-                        "REMARKS",
-                        key="remarks_" + entry["RowKey"]
-                    )
-
-                    submitted = st.form_submit_button("Submit")
-                    if submitted:
-                        payload = {
-                            "RowKey": entry["RowKey"],
-                            "workDone": work_done,
-                            "remarks": remarks
-                        }
-                        post_res = requests.post(
-                            WEB_APP_URL,
-                            json=payload
-                        )
-                        result = post_res.json()
-                        if result["status"] == "success":
-                            st.success("Updated successfully!")
-                        else:
-                            st.error("Failed to update: " + result["message"])
-    else:
-        st.error("Could not fetch data from server.")
+            st.error("Failed to connect to backend.")

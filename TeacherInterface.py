@@ -264,6 +264,7 @@ def main():
             index = 0  # default if current value not in options
 
         # Handle default if current_work_done is not in options
+
 raw_work_done = row.get('WORK DONE IN THE CLASS', '')
 current_work_done = str(raw_work_done).strip() if raw_work_done else ''
 work_done_default = current_work_done if current_work_done in options else options[0]

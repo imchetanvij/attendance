@@ -280,18 +280,16 @@ remarks = st.text_area(
     key=f"remarks_{idx}",
     height=80
 )
-
-        updated_row = {
-            "RowKey": row['RowKey'],
-            "WORK DONE IN THE CLASS": work_done,
-            "REMARKS": remarks,
-        }
-        updated_rows.append(updated_row)
-
-    if st.button("Submit Updates"):
-        response = post_updates(updated_rows)
-        st.success("Updates sent successfully!")
-        st.json(response)
+updated_row = {
+    "RowKey": row['RowKey'],
+    "WORK DONE IN THE CLASS": work_done,
+    "REMARKS": remarks,
+}
+updated_rows.append(updated_row)
+if st.button("Submit Updates"):
+    response = post_updates(updated_rows)
+    st.success("Updates sent successfully!")
+    st.json(response)
 
 if __name__ == "__main__":
     main()

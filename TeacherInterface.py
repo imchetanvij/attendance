@@ -210,89 +210,96 @@ picture_options = {
 "PREINTERMEDIATEQuarterlyCraft":"PREINTERMEDIATE Quarterly Craft"
 }
 
-def fetch_data():
-    resp = requests.get(WEB_APP_URL)
-    resp.raise_for_status()
-    return resp.json()
 
-def update_row(row_key, work_done, remarks):
-    payload = {
-        "RowKey": row_key,
-        "WORK DONE IN THE CLASS": work_done,
-        "REMARKS": remarks
-    }
-    headers = {'Content-Type': 'application/json'}
-    resp = requests.post(WEB_APP_URL, json=payload, headers=headers)
-    resp.raise_for_status()
-    return resp.json()
+
+
+def fetch_data():
+    response = requests.get(WEB_APP_URL)
+    response.raise_for_status()
+    data = response.json()
+    return pd.DataFrame(data)
+
+def expand_data_column(df):
+    # Expand the 'data' dict column into separate columns
+    data_expanded = pd.json_normalize(df['data'])
+    df_expanded = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
+    return df_expanded
+
+def post_updates(updated_rows):
+    # Send updated rows back to the App Script POST endpoint
+    # Payload format may vary depending on your app script
+    payload = {"updates": updated_rows}
+    response = requests.post(WEB_APP_URL, json=payload)
+    response.raise_for_status()
+    return response.json()
 
 def main():
-    st.title("Teacher Class Work Update")
+    st.title("Teacher Attendance Interface")
 
-    teacher_ci = st.text_input("Enter your CI:")
+    # Replace this with actual logged-in teacher CI
+    logged_in_ci = st.text_input("Enter your CI (teacher ID) for testing:")
 
-    if not teacher_ci:
-        st.info("Please enter your CI to load your class data.")
+    if not logged_in_ci:
+        st.info("Please enter your CI to see your data.")
         return
 
-    try:
-        data = fetch_data()
-    except Exception as e:
-        st.error(f"Failed to fetch data: {e}")
+    # Fetch data
+    df_raw = fetch_data()
+
+    # Expand nested data
+    df = expand_data_column(df_raw)
+
+    # Filter rows by logged-in teacher CI
+    df = df[df['CI'] == logged_in_ci]
+
+    if df.empty:
+        st.warning("No data found for your CI.")
         return
 
-    df = pd.DataFrame(data)
-    st.write("Columns in data:", df.columns.tolist())
-    st.write(df.head())
+    # Prepare a list to collect updates
+    updated_rows = []
 
-    filtered = df[df['CI'] == teacher_ci]
+    # Show data and editable fields
+    st.write(f"Showing {len(df)} records for CI = {logged_in_ci}")
 
-    if filtered.empty:
-        st.write("No records found for your CI.")
-        return
-
-    edited_rows = []
-    for idx, row in filtered.iterrows():
+    for idx, row in df.iterrows():
         st.markdown("---")
-        st.write(f"RowKey: {row['RowKey']} | Date: {row['DATE']} | Slot: {row['SLOT']}")
+        st.write(f"**RowKey:** {row['RowKey']} | **Date:** {row.get('DATE', 'N/A')} | **Slot:** {row.get('SLOT', 'N/A')}")
 
-        for col in filtered.columns:
-            if col not in ["WORK DONE IN THE CLASS", "REMARKS"]:
-                st.text(f"{col}: {row[col]}")
+        # Show all fields in read-only except WORK DONE IN THE CLASS and REMARKS
+        for col in df.columns:
+            if col in ['RowKey', 'CI', 'WORK DONE IN THE CLASS', 'REMARKS', 'data']:
+                continue
+            st.write(f"{col}: {row.get(col, '')}")
 
-        work_done_val = row["WORK DONE IN THE CLASS"] if row["WORK DONE IN THE CLASS"] in picture_options else picture_options[0]
-        work_done_new = st.selectbox(
-            f"WORK DONE IN THE CLASS (RowKey {row['RowKey']})",
+        # Editable fields
+        work_done = st.selectbox(
+            "WORK DONE IN THE CLASS",
             options=picture_options,
-            index=picture_options.index(work_done_val),
-            key=f"workdone_{row['RowKey']}"
+            index=picture_options.index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0,
+            key=f"workdone_{idx}"
+        )
+        remarks = st.text_area(
+            "REMARKS",
+            value=row.get('REMARKS', ''),
+            key=f"remarks_{idx}",
+            height=80
         )
 
-        remarks_new = st.text_area(
-            f"REMARKS (RowKey {row['RowKey']})",
-            value=row.get("REMARKS", ""),
-            key=f"remarks_{row['RowKey']}"
-        )
+        # Store updated row data
+        updated_row = {
+            "RowKey": row['RowKey'],
+            "WORK DONE IN THE CLASS": work_done,
+            "REMARKS": remarks,
+        }
+        updated_rows.append(updated_row)
 
-        edited_rows.append({
-            "RowKey": row["RowKey"],
-            "WORK DONE IN THE CLASS": work_done_new,
-            "REMARKS": remarks_new
-        })
-
+    # Submit button
     if st.button("Submit Updates"):
-        count_updated = 0
-        for edit in edited_rows:
-            original = filtered[filtered["RowKey"] == edit["RowKey"]].iloc[0]
-            if (edit["WORK DONE IN THE CLASS"] != original["WORK DONE IN THE CLASS"]) or (edit["REMARKS"] != original.get("REMARKS", "")):
-                try:
-                    update_row(edit["RowKey"], edit["WORK DONE IN THE CLASS"], edit["REMARKS"])
-                    count_updated += 1
-                except Exception as e:
-                    st.error(f"Failed to update RowKey {edit['RowKey']}: {e}")
-
-        st.success(f"Successfully updated {count_updated} row(s).")
+        # Prepare payload for only updated rows with full original row keys
+        response = post_updates(updated_rows)
+        st.success("Updates sent successfully!")
+        st.json(response)
 
 if __name__ == "__main__":
     main()
-

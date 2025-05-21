@@ -269,11 +269,10 @@ work_done_default = current_work_done if current_work_done in options else optio
 work_done = st.selectbox(
     "WORK DONE IN THE CLASS",
     options=options,
-    index=options.index(work_done_default),  # optional, but faster for UI rendering
+    index=options.index(work_done_default),
     format_func=lambda x: picture_options.get(x, x),
     key=f"workdone_{idx}"
 )
-
 #        work_done = st.selectbox(
 #            "WORK DONE IN THE CLASS",
 #            options=options,
@@ -281,7 +280,6 @@ work_done = st.selectbox(
 #            format_func=lambda x: picture_options.get(x, x),
 #            key=f"workdone_{idx}"
 #        )
-
         remarks = st.text_area(
             "REMARKS",
             value=row.get('REMARKS', ''),

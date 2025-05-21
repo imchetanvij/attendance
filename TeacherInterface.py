@@ -218,8 +218,8 @@ def fetch_data():
     response.raise_for_status()
     data = response.json()
     #print(response.json())
-    st.subheader("Raw JSON from Web App:")
-    st.json(response.json())
+    #st.subheader("Raw JSON from Web App:")
+    #st.json(response.json())
     return pd.DataFrame(data)
 
 #def expand_data_column(df):

@@ -258,6 +258,9 @@ def main():
 
         # Get current value for selectbox and handle missing keys
         current_work_done = str(row.get('WORK DONE IN THE CLASS', '')).strip()
+        raw_work_done = row.get('WORK DONE IN THE CLASS', '')
+        current_work_done = str(raw_work_done).strip() if raw_work_done else ''
+        work_done_default = current_work_done if current_work_done in options else options[0]
         try:
             index = options.index(current_work_done)
         except ValueError:
@@ -265,9 +268,7 @@ def main():
 
         # Handle default if current_work_done is not in options
 
-raw_work_done = row.get('WORK DONE IN THE CLASS', '')
-current_work_done = str(raw_work_done).strip() if raw_work_done else ''
-work_done_default = current_work_done if current_work_done in options else options[0]
+
 
 work_done = st.selectbox(
     "WORK DONE IN THE CLASS",

@@ -255,13 +255,13 @@ def main():
 
     # Fetch data
     df_raw = fetch_data()
-    st.write("Raw fetched data:", df_raw)
+    #st.write("Raw fetched data:", df_raw)
 
 
     # Expand nested data
     #df = expand_data_column(df_raw)
     df = df_raw
-    st.write("Raw fetched data Expanded:", df)
+    #st.write("Raw fetched data Expanded:", df)
 
     # Filter rows by logged-in teacher CI
     df = df[df['CI'] == logged_in_ci]

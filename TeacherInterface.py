@@ -298,6 +298,7 @@ def main():
         # Editable fields
         work_done = st.selectbox(
             "WORK DONE IN THE CLASS",
+            value=row.get('WORK DONE IN THE CLASS', ''),
             options=picture_options,
             #index=picture_options.index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0,
             index = list(picture_options.keys()).index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0,
@@ -320,18 +321,11 @@ def main():
         updated_rows.append(updated_row)
 
     # Submit button
-#    if st.button("Submit Updates"):
+    if st.button("Submit Updates"):
         # Prepare payload for only updated rows with full original row keys
-#        response = post_updates(updated_rows)
-#        st.success("Updates sent successfully!")
-#        st.json(response)
-if st.button("Submit Updates"):
-    responses = []
-    for row in updated_rows:
-        resp = post_update(row)
-        responses.append(resp)
-    st.success("Updates sent successfully!")
-    st.json(responses)
+        response = post_updates(updated_rows)
+        st.success("Updates sent successfully!")
+        st.json(response)
 
 
 if __name__ == "__main__":

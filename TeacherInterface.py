@@ -266,7 +266,7 @@ def main():
         work_done = st.selectbox(
             "WORK DONE IN THE CLASS",
             options=options,
-            value=row.get('WORK DONE IN THE CLASS',''),
+            value=str(row.get('WORK DONE IN THE CLASS','').strip(),
             index=index,
             format_func=lambda x: picture_options.get(x, x),
             key=f"workdone_{idx}"

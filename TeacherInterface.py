@@ -226,11 +226,11 @@ def fetch_data():
 #    df_expanded = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
 #    return df_expanded
 
-def expand_data_column(df):
-    if 'data' in df.columns:
-        data_expanded = df['data'].apply(lambda x: pd.Series(x) if isinstance(x, dict) else {})
-        df = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
-    return df
+#def expand_data_column(df):
+#    if 'data' in df.columns:
+#        data_expanded = df['data'].apply(lambda x: pd.Series(x) if isinstance(x, dict) else {})
+#        df = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
+#    return df
 
 
 def post_updates(updated_rows):
@@ -257,7 +257,8 @@ def main():
 
 
     # Expand nested data
-    df = expand_data_column(df_raw)
+    #df = expand_data_column(df_raw)
+    df = df_raw
     st.write("Raw fetched data Expanded:", df)
 
     # Filter rows by logged-in teacher CI

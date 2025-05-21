@@ -233,7 +233,7 @@ for entry in entries:
     st.write(f"### {student_name} - {date} - {slot}")
 
     # Dropdown for "WORK DONE IN THE CLASS"
-    picture_options = ["Option1", "Option2", "Option3"]  # Replace with your real options
+    # picture_options = ["Option1", "Option2", "Option3"]  # Replace with your real options
     selected_work_done = st.selectbox(
         f"Work Done for {student_name}",
         picture_options,

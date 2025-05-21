@@ -246,7 +246,6 @@ def main():
 
     # Fetch data
     df_raw = fetch_data()
-    df_raw = fetch_data()
     st.write("Raw fetched data:", df_raw)
 
 

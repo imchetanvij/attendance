@@ -257,7 +257,9 @@ def main():
             st.write(f"{col}: {row.get(col, '')}")
     
         # Get current short code (e.g., "A1P1")
-        current_code = str(row.get('WORK DONE IN THE CLASS', '')).strip()
+#        current_code = str(row.get('WORK DONE IN THE CLASS', '')).strip()
+        current_code = str(row.get('WORK DONE IN THE CLASS', '')).strip().upper()
+
     
         # Make sure it's a valid key in picture_options
         default_code = current_code if current_code in picture_options else options[0]

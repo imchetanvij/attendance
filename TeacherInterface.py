@@ -289,7 +289,7 @@ def main():
             "WORK DONE IN THE CLASS",
             options=picture_options,
             #index=picture_options.index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0,
-            index = list(picture_options.keys()).index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0
+            index = list(picture_options.keys()).index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0,
 
             key=f"workdone_{idx}"
         )

@@ -220,11 +220,18 @@ def fetch_data():
     print(response.json())
     return pd.DataFrame(data)
 
-def expand_data_column(df):
+#def expand_data_column(df):
     # Expand the 'data' dict column into separate columns
-    data_expanded = pd.json_normalize(df['data'])
-    df_expanded = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
-    return df_expanded
+#    data_expanded = pd.json_normalize(df['data'])
+#    df_expanded = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
+#    return df_expanded
+
+def expand_data_column(df):
+    if 'data' in df.columns:
+        data_expanded = df['data'].apply(lambda x: pd.Series(x) if isinstance(x, dict) else {})
+        df = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
+    return df
+
 
 def post_updates(updated_rows):
     # Send updated rows back to the App Script POST endpoint

@@ -286,7 +286,7 @@ def main():
         for col in df.columns:
             if col in ['RowKey', 'CI', 'WORK DONE IN THE CLASS', 'REMARKS', 'data']:
                 continue
-            st.write(f"{col}: {row.get(col, '')}")
+            st.write(f"**{col}**: {row.get(col, '')}")
     
         # Get current short code (e.g., "A1P1")
 #        current_code = str(row.get('WORK DONE IN THE CLASS', '')).strip()

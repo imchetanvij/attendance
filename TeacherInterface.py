@@ -210,57 +210,86 @@ picture_options = {
 "PREINTERMEDIATEQuarterlyCraft":"PREINTERMEDIATE Quarterly Craft"
 }
 
+def fetch_data():
+    resp = requests.get(WEB_APP_URL)
+    resp.raise_for_status()
+    return resp.json()
 
-try:
-    response = requests.get(WEB_APP_URL)
-    if response.status_code == 200:
-        entries = response.json()
-    else:
-        st.error(f"Failed to fetch data: {response.status_code}")
-        entries = []
-except Exception as e:
-    st.error(f"Error fetching data: {e}")
-    entries = []
-    
-# Assume entries is your JSON list fetched from doGet()
+def update_row(row_key, work_done, remarks):
+    payload = {
+        "RowKey": row_key,
+        "WORK DONE IN THE CLASS": work_done,
+        "REMARKS": remarks
+    }
+    headers = {'Content-Type': 'application/json'}
+    resp = requests.post(WEB_APP_URL, json=payload, headers=headers)
+    resp.raise_for_status()
+    return resp.json()
 
-for entry in entries:
-    student_name = entry.get("STUDENT NAME", "Unknown Student")
-    date = entry.get("DATE", "")
-    slot = entry.get("SLOT", "")
-    row_key = entry.get("RowKey")
+def main():
+    st.title("Teacher Class Work Update")
 
-    st.write(f"### {student_name} - {date} - {slot}")
+    teacher_ci = st.text_input("Enter your CI:")
 
-    # Dropdown for "WORK DONE IN THE CLASS"
-    # picture_options = ["Option1", "Option2", "Option3"]  # Replace with your real options
-    selected_work_done = st.selectbox(
-        f"Work Done for {student_name}",
-        picture_options,
-        index=picture_options.index(entry.get("WORK DONE IN THE CLASS", picture_options[0])),
-        key=f"workdone_{row_key}"
-    )
+    if not teacher_ci:
+        st.info("Please enter your CI to load your class data.")
+        return
 
-    # Text area for remarks
-    remarks = st.text_area(
-        "Remarks",
-        value=entry.get("REMARKS", ""),
-        key=f"remarks_{row_key}"
-    )
+    try:
+        data = fetch_data()
+    except Exception as e:
+        st.error(f"Failed to fetch data: {e}")
+        return
 
-    if st.button(f"Update {student_name}", key=f"update_{row_key}"):
-        # POST update using rowKey
-        post_data = {
-            "RowKey": row_key,
-            "workDone": selected_work_done,
-            "remarks": remarks,
-        }
-        response = requests.post(WEB_APP_URL, json=post_data)
-        if response.status_code == 200:
-            res_json = response.json()
-            if res_json.get("status") == "success":
-                st.success(f"Updated successfully for {student_name}")
-            else:
-                st.error(f"Error: {res_json.get('message')}")
-        else:
-            st.error("Failed to connect to backend.")
+    df = pd.DataFrame(data)
+    filtered = df[df['CI'] == teacher_ci]
+
+    if filtered.empty:
+        st.write("No records found for your CI.")
+        return
+
+    edited_rows = []
+    for idx, row in filtered.iterrows():
+        st.markdown("---")
+        st.write(f"RowKey: {row['RowKey']} | Date: {row['DATE']} | Slot: {row['SLOT']}")
+
+        for col in filtered.columns:
+            if col not in ["WORK DONE IN THE CLASS", "REMARKS"]:
+                st.text(f"{col}: {row[col]}")
+
+        work_done_val = row["WORK DONE IN THE CLASS"] if row["WORK DONE IN THE CLASS"] in picture_options else picture_options[0]
+        work_done_new = st.selectbox(
+            f"WORK DONE IN THE CLASS (RowKey {row['RowKey']})",
+            options=picture_options,
+            index=picture_options.index(work_done_val),
+            key=f"workdone_{row['RowKey']}"
+        )
+
+        remarks_new = st.text_area(
+            f"REMARKS (RowKey {row['RowKey']})",
+            value=row.get("REMARKS", ""),
+            key=f"remarks_{row['RowKey']}"
+        )
+
+        edited_rows.append({
+            "RowKey": row["RowKey"],
+            "WORK DONE IN THE CLASS": work_done_new,
+            "REMARKS": remarks_new
+        })
+
+    if st.button("Submit Updates"):
+        count_updated = 0
+        for edit in edited_rows:
+            original = filtered[filtered["RowKey"] == edit["RowKey"]].iloc[0]
+            if (edit["WORK DONE IN THE CLASS"] != original["WORK DONE IN THE CLASS"]) or (edit["REMARKS"] != original.get("REMARKS", "")):
+                try:
+                    update_row(edit["RowKey"], edit["WORK DONE IN THE CLASS"], edit["REMARKS"])
+                    count_updated += 1
+                except Exception as e:
+                    st.error(f"Failed to update RowKey {edit['RowKey']}: {e}")
+
+        st.success(f"Successfully updated {count_updated} row(s).")
+
+if __name__ == "__main__":
+    main()
+

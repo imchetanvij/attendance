@@ -250,52 +250,40 @@ def main():
         st.markdown("---")
         st.write(f"**RowKey:** {row['RowKey']} | **Date:** {row.get('DATE', 'N/A')} | **Slot:** {row.get('SLOT', 'N/A')}")
 
-        # Show non-editable fields except keys you want editable
         for col in df.columns:
             if col in ['RowKey', 'CI', 'WORK DONE IN THE CLASS', 'REMARKS', 'data']:
                 continue
             st.write(f"{col}: {row.get(col, '')}")
 
-        # Get current value for selectbox and handle missing keys
         current_work_done = str(row.get('WORK DONE IN THE CLASS', '')).strip()
-        raw_work_done = row.get('WORK DONE IN THE CLASS', '')
-        current_work_done = str(raw_work_done).strip() if raw_work_done else ''
         work_done_default = current_work_done if current_work_done in options else options[0]
-        try:
-            index = options.index(current_work_done)
-        except ValueError:
-            index = 0  # default if current value not in options
 
-        # Handle default if current_work_done is not in options
+        work_done = st.selectbox(
+            "WORK DONE IN THE CLASS",
+            options=options,
+            index=options.index(work_done_default),
+            format_func=lambda x: picture_options.get(x, x),
+            key=f"workdone_{idx}"
+        )
 
+        remarks = st.text_area(
+            "REMARKS",
+            value=row.get('REMARKS', ''),
+            key=f"remarks_{idx}",
+            height=80
+        )
 
+        updated_row = {
+            "RowKey": row['RowKey'],
+            "WORK DONE IN THE CLASS": work_done,
+            "REMARKS": remarks,
+        }
+        updated_rows.append(updated_row)
 
-work_done = st.selectbox(
-    "WORK DONE IN THE CLASS",
-    options=options,
-    index=options.index(work_done_default),
-    format_func=lambda x: picture_options.get(x, x),
-    key=f"workdone_{idx}"
-)
-
-
-remarks = st.text_area(
-    "REMARKS",
-    value=row.get('REMARKS', ''),
-    key=f"remarks_{idx}",
-    height=80
-)
-updated_row = {
-    "RowKey": row['RowKey'],
-    "WORK DONE IN THE CLASS": work_done,
-    "REMARKS": remarks,
-}
-updated_rows.append(updated_row)
-if st.button("Submit Updates"):
-    response = post_updates(updated_rows)
-    st.success("Updates sent successfully!")
-    st.json(response)
+    if st.button("Submit Updates"):
+        response = post_updates(updated_rows)
+        st.success("Updates sent successfully!")
+        st.json(response)
 
 if __name__ == "__main__":
     main()
-

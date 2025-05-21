@@ -228,7 +228,7 @@ def post_updates(updated_rows):
 def main():
     st.title("Teacher Attendance Interface")
 
-    logged_in_ci = st.text_input("Enter your CI (teacher ID) for testing:", key="logged_in_ci")
+    #logged_in_ci = st.text_input("Enter your CI (teacher ID) for testing:", key="logged_in_ci")
 
 
     if not logged_in_ci:

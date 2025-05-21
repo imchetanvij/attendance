@@ -5,6 +5,38 @@ import pandas as pd
 
 # 🔧 Replace this with your actual Web App URL
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgx96l-aK3d55jnVLxaFTwp8wTObnwQxg27M9cg_jVTbT0CSaeeq65NBN_0rB50dsD/exec"  # replace with your deployed URL
+# 🌟 Page Config
+st.set_page_config(page_title="Update Picture Status", page_icon="🎨", layout="wide")
+
+# 🎨 CSS Style Enhancements
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f9f9fb;
+    }
+    div[data-testid="stSidebar"] {
+        background-color: #fff;
+    }
+    .stTextInput>div>div>input {
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    .block-container {
+        padding: 2rem 1rem;
+    }
+    .card {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 📘 Header
+st.markdown("## ✏️ Update Student Work")
+st.markdown("Use this tool to update the student's picture description in a clean and easy way.")
 
 # Load picture descriptions (can come from a Google Sheet or local dict)
 picture_options = {

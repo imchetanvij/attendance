@@ -258,6 +258,7 @@ def main():
 
     # Expand nested data
     df = expand_data_column(df_raw)
+    st.write("Raw fetched data Expanded:", df)
 
     # Filter rows by logged-in teacher CI
     df = df[df['CI'] == logged_in_ci]

@@ -217,36 +217,9 @@ def fetch_data():
     response = requests.get(WEB_APP_URL)
     response.raise_for_status()
     data = response.json()
-    #print(response.json())
-    #st.subheader("Raw JSON from Web App:")
-    #st.json(response.json())
     return pd.DataFrame(data)
 
-#def expand_data_column(df):
-    # Expand the 'data' dict column into separate columns
-#    data_expanded = pd.json_normalize(df['data'])
-#    df_expanded = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
-#    return df_expanded
-
-#def expand_data_column(df):
-#    if 'data' in df.columns:
-#        data_expanded = df['data'].apply(lambda x: pd.Series(x) if isinstance(x, dict) else {})
-#        df = pd.concat([df.drop(columns=['data']), data_expanded], axis=1)
-#    return df
-
-def post_update(row):
-    payload = {
-        "RowKey": row["RowKey"],
-        "workDone": row["WORK DONE IN THE CLASS"],
-        "remarks": row["REMARKS"]
-    }
-    response = requests.post(WEB_APP_URL, json=payload)
-    response.raise_for_status()
-    return response.json()
-
 def post_updates(updated_rows):
-    # Send updated rows back to the App Script POST endpoint
-    # Payload format may vary depending on your app script
     payload = {"updates": updated_rows}
     response = requests.post(WEB_APP_URL, json=payload)
     response.raise_for_status()
@@ -255,56 +228,49 @@ def post_updates(updated_rows):
 def main():
     st.title("Teacher Attendance Interface")
 
-    # Replace this with actual logged-in teacher CI
     logged_in_ci = st.text_input("Enter your CI (teacher ID) for testing:")
 
     if not logged_in_ci:
         st.info("Please enter your CI to see your data.")
         return
 
-    # Fetch data
     df_raw = fetch_data()
-    #st.write("Raw fetched data:", df_raw)
-
-
-    # Expand nested data
-    #df = expand_data_column(df_raw)
-    df = df_raw
-    #st.write("Raw fetched data Expanded:", df)
-
-    # Filter rows by logged-in teacher CI
-    df = df[df['CI'] == logged_in_ci]
+    df = df_raw[df_raw['CI'] == logged_in_ci]
 
     if df.empty:
         st.warning("No data found for your CI.")
         return
 
-    # Prepare a list to collect updates
     updated_rows = []
-
-    # Show data and editable fields
     st.write(f"Showing {len(df)} records for CI = {logged_in_ci}")
+
+    options = list(picture_options.keys())
 
     for idx, row in df.iterrows():
         st.markdown("---")
         st.write(f"**RowKey:** {row['RowKey']} | **Date:** {row.get('DATE', 'N/A')} | **Slot:** {row.get('SLOT', 'N/A')}")
 
-        # Show all fields in read-only except WORK DONE IN THE CLASS and REMARKS
+        # Show non-editable fields except keys you want editable
         for col in df.columns:
             if col in ['RowKey', 'CI', 'WORK DONE IN THE CLASS', 'REMARKS', 'data']:
                 continue
             st.write(f"{col}: {row.get(col, '')}")
 
-        # Editable fields
+        # Get current value for selectbox and handle missing keys
+        current_work_done = str(row.get('WORK DONE IN THE CLASS', '')).strip()
+        try:
+            index = options.index(current_work_done)
+        except ValueError:
+            index = 0  # default if current value not in options
+
         work_done = st.selectbox(
             "WORK DONE IN THE CLASS",
-            value=row.get('WORK DONE IN THE CLASS', ''),
-            options=picture_options,
-            #index=picture_options.index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0,
-            index = list(picture_options.keys()).index(row.get('WORK DONE IN THE CLASS')) if row.get('WORK DONE IN THE CLASS') in picture_options else 0,
-
+            options=options,
+            index=index,
+            format_func=lambda x: picture_options.get(x, x),
             key=f"workdone_{idx}"
         )
+
         remarks = st.text_area(
             "REMARKS",
             value=row.get('REMARKS', ''),
@@ -312,7 +278,6 @@ def main():
             height=80
         )
 
-        # Store updated row data
         updated_row = {
             "RowKey": row['RowKey'],
             "WORK DONE IN THE CLASS": work_done,
@@ -320,12 +285,14 @@ def main():
         }
         updated_rows.append(updated_row)
 
-    # Submit button
     if st.button("Submit Updates"):
-        # Prepare payload for only updated rows with full original row keys
         response = post_updates(updated_rows)
         st.success("Updates sent successfully!")
         st.json(response)
+
+if __name__ == "__main__":
+    main()
+
 
 
 if __name__ == "__main__":

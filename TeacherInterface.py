@@ -247,38 +247,45 @@ def main():
     options = list(picture_options.keys())
 
     for idx, row in df.iterrows():
-        st.markdown("---")
-        st.write(f"**RowKey:** {row['RowKey']} | **Date:** {row.get('DATE', 'N/A')} | **Slot:** {row.get('SLOT', 'N/A')}")
+    st.markdown("---")
+    st.write(f"**RowKey:** {row['RowKey']} | **Date:** {row.get('DATE', 'N/A')} | **Slot:** {row.get('SLOT', 'N/A')}")
 
-        for col in df.columns:
-            if col in ['RowKey', 'CI', 'WORK DONE IN THE CLASS', 'REMARKS', 'data']:
-                continue
-            st.write(f"{col}: {row.get(col, '')}")
+    # Show static fields
+    for col in df.columns:
+        if col in ['RowKey', 'CI', 'WORK DONE IN THE CLASS', 'REMARKS', 'data']:
+            continue
+        st.write(f"{col}: {row.get(col, '')}")
 
-        current_work_done = str(row.get('WORK DONE IN THE CLASS', '')).strip()
-        work_done_default = current_work_done if current_work_done in options else options[0]
+    # Get current short code (e.g., "A1P1")
+    current_code = str(row.get('WORK DONE IN THE CLASS', '')).strip()
 
-        work_done = st.selectbox(
-            "WORK DONE IN THE CLASS",
-            options=options,
-            index=options.index(work_done_default),
-            format_func=lambda x: picture_options.get(x, x),
-            key=f"workdone_{idx}"
-        )
+    # Make sure it's a valid key in picture_options
+    default_code = current_code if current_code in picture_options else options[0]
 
-        remarks = st.text_area(
-            "REMARKS",
-            value=row.get('REMARKS', ''),
-            key=f"remarks_{idx}",
-            height=80
-        )
+    # Selectbox showing descriptive label, storing the short code
+    selected_code = st.selectbox(
+        "WORK DONE IN THE CLASS",
+        options=options,
+        index=options.index(default_code),
+        format_func=lambda x: picture_options[x],
+        key=f"workdone_{idx}"
+    )
 
-        updated_row = {
-            "RowKey": row['RowKey'],
-            "WORK DONE IN THE CLASS": work_done,
-            "REMARKS": remarks,
-        }
-        updated_rows.append(updated_row)
+    # Text area for remarks
+    remarks = st.text_area(
+        "REMARKS",
+        value=row.get('REMARKS', ''),
+        key=f"remarks_{idx}",
+        height=80
+    )
+
+    updated_row = {
+        "RowKey": row['RowKey'],
+        "WORK DONE IN THE CLASS": selected_code,  # Short code to be written back
+        "REMARKS": remarks,
+    }
+    updated_rows.append(updated_row)
+
 
     if st.button("Submit Updates"):
         response = post_updates(updated_rows)

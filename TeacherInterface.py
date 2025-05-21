@@ -256,48 +256,7 @@ def post_updates(updated_rows):
     response = requests.post(WEB_APP_URL, json=payload)
     response.raise_for_status()
     return response.json()
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    st.markdown("### 🧑‍🎓 Enter Student Details")
-
-    student_name = st.text_input("Student Name")
-    student_id = st.text_input("Student ID")
-    level = st.selectbox("Select Level", ["Foundation", "Basic", "Advanced"])
-
-    st.markdown("---")
-    st.markdown("### 🖼 Select Picture Description")
-
-    # Smartly group picture options
-    picture_keys = list(picture_options.keys())
-    display_values = [picture_options[k] for k in picture_keys]
-    selected_key = st.selectbox("Picture Activity", display_values)
-
-    remarks = st.text_area("Remarks / Comments", placeholder="Enter optional remarks here...")
-
-    st.markdown("---")
-    submit = st.button("✅ Submit Update")
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 🚀 Submit to Web App
-if submit:
-    payload = {
-        "student_name": student_name,
-        "student_id": student_id,
-        "level": level,
-        "picture_key": selected_key.split(":")[0],  # just the key part (e.g., A1P1)
-        "remarks": remarks
-    }
-
-    try:
-        response = requests.post(WEB_APP_URL, json=payload)
-        if response.status_code == 200:
-            st.success("✅ Successfully submitted the update!")
-        else:
-            st.error("❌ Failed to submit. Please try again.")
-    except Exception as e:
-        st.error(f"🚨 Error: {str(e)}")
 def main():
     st.title("Teacher Attendance Interface")
 

@@ -273,19 +273,13 @@ work_done = st.selectbox(
     format_func=lambda x: picture_options.get(x, x),
     key=f"workdone_{idx}"
 )
-#        work_done = st.selectbox(
-#            "WORK DONE IN THE CLASS",
-#            options=options,
-#            index=index,
-#            format_func=lambda x: picture_options.get(x, x),
-#            key=f"workdone_{idx}"
-#        )
-        remarks = st.text_area(
-            "REMARKS",
-            value=row.get('REMARKS', ''),
-            key=f"remarks_{idx}",
-            height=80
-        )
+
+remarks = st.text_area(
+    "REMARKS",
+    value=row.get('REMARKS', ''),
+    key=f"remarks_{idx}",
+    height=80
+)
 
         updated_row = {
             "RowKey": row['RowKey'],

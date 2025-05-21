@@ -211,7 +211,17 @@ picture_options = {
 }
 
 
-
+try:
+    response = requests.get(WEB_APP_URL)
+    if response.status_code == 200:
+        entries = response.json()
+    else:
+        st.error(f"Failed to fetch data: {response.status_code}")
+        entries = []
+except Exception as e:
+    st.error(f"Error fetching data: {e}")
+    entries = []
+    
 # Assume entries is your JSON list fetched from doGet()
 
 for entry in entries:
